@@ -1,0 +1,139 @@
+	// Project and Analysis of Algorithms
+// Flávio Keidi Miyazawa
+// Problems with connectivity: Minimum Cost k-paths (edge disjoint)
+#include <gurobi_c++.h>
+#include <iostream>
+#include <float.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <queue>
+#include <lemon/list_graph.h>
+#define BC_EPS 0.001
+#define BC_INF 1000000000000.0
+#include "mygraphlib.h"
+#include <string>
+#include "myutils.h"
+#include <lemon/concepts/digraph.h>
+#include <lemon/preflow.h>
+using namespace lemon;
+using namespace std;
+#define EPS 0.00001
+
+
+int cutcount = 0;
+
+void monitoramento_em_grafo_bipartido( ListGraph &g, GRBModel &model, NodeName &vname, ListGraph::NodeMap<double> &custo, ListGraph::NodeMap<GRBVar> &solucao) {
+	for (ListGraph::NodeIt v(g); v != INVALID; ++v) {
+
+		char name[100];
+		sprintf(name,"X_%s",vname[v].c_str());
+
+	    	solucao[v] = model.addVar(0.0, 1.0, custo[v],GRB_CONTINUOUS, name); 
+	}
+	model.update();	
+	for (ListGraph::EdgeIt e(g); e!=INVALID; ++e) {
+		model.addConstr(solucao[g.u(e)] + solucao[g.v(e)] >= 1);
+    	}
+}
+
+// vCover_Instance put all relevant information in one class.
+class vCover_Instance {
+public:
+  vCover_Instance(ListGraph &graph,NodeName &vvname,
+		  NodePos &posx,NodePos &posy,NodeWeight &vweight);
+  ListGraph &g;
+  NodeName &vname;
+  NodePos &px;
+  NodePos &py;
+  NodeWeight &weight;
+  int nnodes;
+};
+
+vCover_Instance::vCover_Instance(ListGraph &graph, NodeName &vvname,
+				 NodePos &posx,NodePos &posy,
+				 NodeWeight &vweight):
+  g(graph), vname(vvname), px(posx), py(posy), weight(vweight)
+{
+  nnodes = countNodes(g);
+}
+
+int main(int argc, char *argv[]) 
+{
+  int k,found;
+  ListGraph g;  // graph declaration
+  string digraph_vcover_filename;
+  NodeName vname(g);  // name of graph nodes
+EdgeName ename(g);  // name of graph edges
+  ListGraph::NodeMap<double> px(g),py(g);  // xy-coodinates for each node
+  ListGraph::NodeMap<int> vcolor(g);// color of nodes
+  ListGraph::EdgeMap<int> ecolor(g); // color of edges
+  NodeWeight lpvar(g);    // used to obtain the contents of the LP variables
+  NodeWeight weight(g);   // node weights
+  ListGraph::NodeMap<GRBVar> x(g); // binary variables for each node
+  vector <Node> V;
+  int seed=0;
+  srand48(1);
+
+  // uncomment one of these lines to change default pdf reader, or insert new one
+  //set_pdfreader("open");    // pdf reader for Mac OS X
+  //set_pdfreader("xpdf");    // pdf reader for Linux
+  set_pdfreader("evince");  // pdf reader for Linux
+  //set_pdfreader("open -a Skim.app");
+  // double cutoff;   // used to prune non promissing branches (of the B&B tree)
+  if (argc!=2) {cout<<endl<<"Usage: "<< argv[0]<<"  <digraph_vcover_filename>"<< endl << endl;
+    cout << "Example:      " << argv[0] << " gr_bipartido_1.in" << endl << endl;
+    exit(0);}
+
+  digraph_vcover_filename = argv[1];
+
+  GRBEnv env = GRBEnv();
+  GRBModel model = GRBModel(env);
+  model.getEnv().set(GRB_IntParam_Seed, seed);
+  model.set(GRB_StringAttr_ModelName, "Vertex Cover with GUROBI"); // prob. name
+  model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE); // is a minimization problem
+
+  ReadListGraph3(digraph_vcover_filename,g,vname,weight,px,py);
+  
+  vCover_Instance T(g,vname,px,py,weight);
+
+
+  //for (DiNodeIt v(g);v!=INVALID;++v){ if(v==T.V[0])vcolor[v]=RED; else vcolor[v]=BLUE;}
+  //for (int i=1;i<T.nt;i++) vcolor[T.V[i]] = MAGENTA;
+  //for (ArcIt e(g); e != INVALID; ++e) ecolor[e] = BLUE;
+  //ViewListDigraph(g,vname,px,py,vcolor,ecolor,"Triangulated graph");
+  
+  // Generate the binary variables and the objective function
+  // Add one binary variable for each edge and set its cost in the objective function
+ try {
+
+	monitoramento_em_grafo_bipartido(g, model, vname, weight, x);
+
+	model.update();	
+    
+	//model.write("model.lp"); system("cat model.lp");
+
+	model.optimize();
+
+
+    double soma=0.0;
+    for (ListGraph::NodeIt v(g);v!=INVALID;++v) vcolor[v]=BLUE; // all nodes BLUE
+
+    for (ListGraph::EdgeIt e(g); e!=INVALID; ++e) ecolor[e]=BLUE;
+
+    for (ListGraph::NodeIt v(g); v!=INVALID; ++v) {
+      lpvar[v] = x[v].get(GRB_DoubleAttr_X);
+      if (lpvar[v] > 1.0 - EPS){ soma += weight[v]; vcolor[v]=RED;}
+    }
+    cout << "vCover Tree Value = " << soma << endl;
+
+    //-----------------------------------------------------------------
+
+    ViewListGraph(g,vname,ename,px,py,vcolor,ecolor,
+	"vCover cost in graph with "+IntToString(T.nnodes)+
+	" nodes: "+DoubleToString(soma));
+  } catch (...) {cout << "Error during callback..." << endl; }
+  return 0;
+
+}
+

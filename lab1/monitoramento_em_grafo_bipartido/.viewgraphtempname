@@ -1,0 +1,38 @@
+graph g {
+	node [shape = "circle", fontsize = "50"];
+	15 [style = filled, fontsize = "50", color="blue", pos = "15.111111,35.555556!" ];
+	14 [style = filled, fontsize = "50", color="blue", pos = "7.111111,32.444444!" ];
+	13 [style = filled, fontsize = "50", color="blue", pos = "12.000000,36.444444!" ];
+	12 [style = filled, fontsize = "50", color="blue", pos = "0.000000,27.555556!" ];
+	11 [style = filled, fontsize = "50", color="blue", pos = "7.555556,33.777778!" ];
+	10 [style = filled, fontsize = "50", color="blue", pos = "6.666667,36.000000!" ];
+	9 [style = filled, fontsize = "50", color="red", pos = "10.666667,40.000000!" ];
+	8 [style = filled, fontsize = "50", color="red", pos = "12.444444,33.777778!" ];
+	7 [style = filled, fontsize = "50", color="red", pos = "7.111111,5.333333!" ];
+	6 [style = filled, fontsize = "50", color="red", pos = "18.222222,8.444444!" ];
+	5 [style = filled, fontsize = "50", color="red", pos = "17.333333,0.000000!" ];
+	4 [style = filled, fontsize = "50", color="red", pos = "10.222222,6.222222!" ];
+	3 [style = filled, fontsize = "50", color="red", pos = "15.111111,0.444444!" ];
+	2 [style = filled, fontsize = "50", color="blue", pos = "14.666667,8.000000!" ];
+	1 [style = filled, fontsize = "50", color="blue", pos = "11.555556,11.111111!" ];
+	7  -- 15 [label = "7 , 15", color="blue", fontsize="50" ];
+	7  -- 12 [label = "7 , 12", color="blue", fontsize="50" ];
+	7  -- 10 [label = "7 , 10", color="blue", fontsize="50" ];
+	6  -- 13 [label = "6 , 13", color="blue", fontsize="50" ];
+	6  -- 12 [label = "6 , 12", color="blue", fontsize="50" ];
+	6  -- 8 [label = "6 , 8", color="blue", fontsize="50" ];
+	5  -- 13 [label = "5 , 13", color="blue", fontsize="50" ];
+	5  -- 11 [label = "5 , 11", color="blue", fontsize="50" ];
+	4  -- 15 [label = "4 , 15", color="blue", fontsize="50" ];
+	4  -- 14 [label = "4 , 14", color="blue", fontsize="50" ];
+	4  -- 12 [label = "4 , 12", color="blue", fontsize="50" ];
+	4  -- 10 [label = "4 , 10", color="blue", fontsize="50" ];
+	4  -- 9 [label = "4 , 9", color="blue", fontsize="50" ];
+	3  -- 14 [label = "3 , 14", color="blue", fontsize="50" ];
+	3  -- 12 [label = "3 , 12", color="blue", fontsize="50" ];
+	3  -- 8 [label = "3 , 8", color="blue", fontsize="50" ];
+	2  -- 9 [label = "2 , 9", color="blue", fontsize="50" ];
+	1  -- 8 [label = "1 , 8", color="blue", fontsize="50" ];
+label="Solucao do Monitoramento com custo 63";
+fontsize="50";
+}
