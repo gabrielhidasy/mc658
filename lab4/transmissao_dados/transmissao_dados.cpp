@@ -90,31 +90,77 @@ bool transmissoes(Problem_Data &G, long maxtime)
   model.set(GRB_StringAttr_ModelName, "Transmissão"); 
   model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
   // is a minimization problem
-  G.NPairs = G.s.size(); //NPairs ta vindo errado!!!
+  G.NPairs = G.s.size(); //Correcting strange problem in input
   cout << "NPairs " << G.NPairs << endl;
-  vector <vector <GRBVar> > x(G.NEdges, vector <GRBVar> (G.NPairs));
-  // ListGraph::NodeMap<GRBVar> x(g); // variables for each node
-  // ListGraph::EdgeMap<GRBVar> y(g); // variables for each edge
-  // for (unsigned int i = 0; i < G.s.size(); i++) {
-  //   (x[i])(G.g); // variables for each edge
+
+  //Two variables for each edge for each pair
+  ListGraph::EdgeMap< vector <GRBVar> > g(G.g);
+  ListGraph::EdgeMap< vector <GRBVar> > b(G.g);
+
+  // g.resize(G.NPairs);
+  // b.resize(G.NPairs);
+  // for (int i = 0; i < G.NPairs; i++) {
+  //   (g[i])(G.g);
+  //   (b[i])(G.g);
   // }
+
   char namme[100];
   int i = 0;
-  for(ListGraph::EdgeIt e(G.g); e != INVALID; ++e) {
-    for (int j = 0; j < G.NPairs; j++) {
-      sprintf(namme,"V_%d_%d",i,j);
-      //printf("V_%d_%d ",i,j);
-      double tmp  = G.custo[e]*G.q[j];
-      
-      //cout << "G.Q > " << G.q[j] << endl;
-      x[i][j] = model.addVar(0.0, 1.0, tmp,GRB_BINARY,namme);
+  double tmp = 0;
+  //Funcao de minimizacao
+  for (ListGraph::EdgeIt e(G.g); e != INVALID; ++e) {
+    sprintf(namme,"E_%d_%lf",i++,tmp);
+    tmp = G.custo[e];
+    g[e].resize(G.NPairs);
+    b[e].resize(G.NPairs);
+    for (int z = 0; z < G.NPairs; z++) {
+      g[e][z] = model.addVar(0,1,tmp*G.q[z],GRB_BINARY,namme);
+      b[e][z] = model.addVar(0,1,tmp*G.q[z],GRB_BINARY,namme);
     }
-    i++;
+  }
+  model.update();
+  // Restricao de latencia
+  for (int z = 0; z < G.NPairs; z++) {
+    GRBLinExpr expr;
+    for (ListGraph::EdgeIt e(G.g); e != INVALID; ++e) {
+      expr += g[e][z];
+      expr += b[e][z];
+    }
+    model.addConstr(expr <= G.Tmax[z]);
+  }
+  model.update();
+  // Restricao de capacidade
+  for (ListGraph::EdgeIt e(G.g); e != INVALID; ++e) {
+    GRBLinExpr expr;
+    for (int z = 0; z < G.NPairs; z++) {
+      expr += g[e][z]*G.q[z];
+      expr += b[e][z]*G.q[z];
+    }
+    model.addConstr(expr <= G.capacidade[e]);
+  }
+  model.update();
+  // Restricao de conservacao de fluxo
+  for (int z = 0; z < G.NPairs; z++) { //Para cada par
+    for (ListGraph::NodeIt v(G.g); v != INVALID; ++v) {
+      //Para cada aresta saindo de v
+      GRBLinExpr expr;
+      for (ListGraph:IncEdgeIt e(G.g, v); e != INVALID; ++e) {
+	//Para cada aresta desse no
+	expr += g[e][z];
+	expr -= b[e][z];
+      }
+      //se v for membro de s
+      //model.addConstr(expr == 1);
+      //se v for membro de t
+      //model.addConstr(expr == -1);
+      //else
+      //model.addConstr(expr == 0);
+    }
   }
   model.update();
   try {
-    model.optimize();
-    //model.write("model.lp"); system("cat model.lp");
+    //model.optimize();
+    model.write("model.lp"); system("cat model.lp");
     return 1;
   } catch (...)
     {
@@ -141,11 +187,11 @@ int main(int argc, char *argv[])
   EdgeWeight latencia(g);
   vector<vector<Node>> BestSol;
 
-  double BestVal;
-  double BestLB;
+  //double BestVal;
+  //double BestLB;
 	
   int seed=0;
-  srand48(1);
+  srand48(seed);
 
   // uncomment one of these lines to change default pdf reader, or insert new one
   //set_pdfreader("open");    // pdf reader for Mac OS X
@@ -167,7 +213,8 @@ int main(int argc, char *argv[])
   
   try {
 
-    bool res = transmissoes(dt, 10000);
+    //bool res =
+    transmissoes(dt, 10000);
     cout << "Melhor resultado: " << dt.BestVal << endl;
     /*
       double soma=0.0;
