@@ -6,6 +6,11 @@
 #include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <gurobi_c++.h>
+#include <iostream>
+#include <float.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <queue>
 #include <lemon/list_graph.h>
@@ -81,28 +86,70 @@ Problem_Data::Problem_Data(ListGraph &graph,
   BestLB = 0;
 }
 
+void extract_solution(Problem_Data &G,
+		      ListGraph::EdgeMap< vector <GRBVar> > &g,
+		      ListGraph::EdgeMap< vector <GRBVar> > &b) {
+  for (int z = 0; z < G.NPairs; z++) {
+    for (ListGraph::EdgeIt e(G.g); e != INVALID; ++e) {
+      //Para cada aresta desse no
+      if (g[e][z].get(GRB_DoubleAttr_X) > 0.9 ||
+	  b[e][z].get(GRB_DoubleAttr_X) > 0.9) {
+	G.BestVal += G.custo[e]*G.q[z];
+      } 
+    }
+  }
+  G.BestSol.resize(G.NPairs);
+  for (int z = 0; z < G.NPairs; z++) {
+    vector <Node> npath[2];
+    //Se a aresta está ativa nesse path printa ela
+    //cout << z << ": " << G.g.id(G.s[z]) << "--";
+    //cout << G.g.id(G.t[z]) << ": ";
+    for (ListGraph::EdgeIt e(G.g); e != INVALID; ++e) {
+      //Para cada aresta desse no
+      if (g[e][z].get(GRB_DoubleAttr_X) > 0.9) {
+	npath[0].push_back(G.g.u(e));
+	npath[1].push_back(G.g.v(e));
+	//cout << G.g.id(G.g.u(e)) << "-g-" << G.g.id(G.g.v(e)) << " ";
+      }
+      if (b[e][z].get(GRB_DoubleAttr_X) > 0.9) {
+	npath[0].push_back(G.g.v(e));
+	npath[1].push_back(G.g.u(e));
+	//cout << G.g.id(G.g.v(e)) << "-b-" << G.g.id(G.g.u(e)) << " ";
+      }
+    }
+    //cout << endl;
+    Node ns = G.s[z];
+    while (G.BestSol[z].size() != npath[0].size()) {
+      G.BestSol[z].push_back(ns);
+      int c = 0;
+      while (npath[0][c] != ns) c++;
+      ns = npath[1][c];
+    }
+    G.BestSol[z].push_back(G.t[z]);
+    cout << G.g.id(G.BestSol[z][0]);
+    for (unsigned int i = 1; i < G.BestSol[z].size(); i++) {
+      cout << "-" << G.g.id(G.BestSol[z][i]);
+    }
+      
+    cout << endl;
+  }
+}
+
 bool transmissoes(Problem_Data &G, long maxtime)
 {
   int seed = 0;
   GRBEnv env = GRBEnv();
   GRBModel model = GRBModel(env);
   model.getEnv().set(GRB_IntParam_Seed, seed);
-  model.set(GRB_StringAttr_ModelName, "Transmissão"); 
+  model.set(GRB_StringAttr_ModelName, "Transmissão");
+  model.getEnv().set(GRB_DoubleParam_TimeLimit, maxtime);
   model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
   // is a minimization problem
   G.NPairs = G.s.size(); //Correcting strange problem in input
-  //cout << "NPairs " << G.NPairs << endl;
 
   //Two variables for each edge for each pair
   ListGraph::EdgeMap< vector <GRBVar> > g(G.g);
   ListGraph::EdgeMap< vector <GRBVar> > b(G.g);
-
-  // g.resize(G.NPairs);
-  // b.resize(G.NPairs);
-  // for (int i = 0; i < G.NPairs; i++) {
-  //   (g[i])(G.g);
-  //   (b[i])(G.g);
-  // }
 
   char nammeG[100];
   char nammeB[100];
@@ -128,10 +175,8 @@ bool transmissoes(Problem_Data &G, long maxtime)
     for (ListGraph::EdgeIt e(G.g); e != INVALID; ++e) {
       expr += g[e][z]*G.latencia[e];
       expr += b[e][z]*G.latencia[e];
-      //cout << G.g.id(G.g.u(e)) << " " << G.g.id(G.g.v(e)) << " " << G.latencia[e] << endl;
     }
     model.addConstr(expr <= G.Tmax[z]);
-    //cout << G.Tmax[z] << endl;
   }
   model.update();
   // Restricao de capacidade
@@ -159,7 +204,6 @@ bool transmissoes(Problem_Data &G, long maxtime)
 	  expr += b[e][z];
 	}
       }
-      //cout << G.g.id(v) << endl;
       if (G.g.id(v) == G.g.id(G.s[z])) {
 	//se v for membro de s
 	model.addConstr(expr == 1);
@@ -177,26 +221,20 @@ bool transmissoes(Problem_Data &G, long maxtime)
   try {
     model.optimize();
     //model.write("model.lp"); system("cat model.lp");
-    if (model.get(GRB_IntAttr_Status) != GRB_OPTIMAL) {
+    if (model.get(GRB_IntAttr_Status) != GRB_OPTIMAL &&
+	(model.get(GRB_IntAttr_Status) != GRB_TIME_LIMIT)) {
       cout << "Erro, sistema impossivel" << endl;
       exit(1);
     }
-    // for (ListGraph::EdgeIt e(G.g); e != INVALID; ++e) {
-    //     for (int z = 0; z < G.NPairs; z++) {
-    // 	if (g[e][z].get(GRB_Double_Attr_X) > 0.9)
-    // 	g[e][z] = model.addVar(0,1,tmp*G.q[z],GRB_BINARY,nammeG);
-    // 	b[e][z] = model.addVar(0,1,tmp*G.q[z],GRB_BINARY,nammeB);
-    //   }
-    // }
-    
-    
-    return 1;
-  } catch (...)
-    {
-      cout << "Error during callback 2..." << endl;
-      return(0);
+    extract_solution(G,g,b);
+    if (model.get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
+      return false;
     }
-  return 0;
+  } catch (...) {
+    cout << "Error during callback 2..." << endl;
+    return false;
+  }
+  return true;
 }
 
 
@@ -237,32 +275,16 @@ int main(int argc, char *argv[])
   string filename = argv[1];
   
   ReadListGraph3(filename, g, NNodes, NEdges, NPairs, nodename, posx, posy, latencia, capacidade, custo, s, t, Tmax, q);
-
   Problem_Data dt(g, nodename, posx, posy, s, t, Tmax, q, custo, capacidade, latencia);
-  
   try {
-
-    //bool res =
-    transmissoes(dt, 10000);
-    cout << "Melhor resultado: " << dt.BestVal << endl;
-    /*
-      double soma=0.0;
-      for (ListGraph::NodeIt v(g);v!=INVALID;++v) vcolor[v]=BLUE; // all nodes BLUE
-
-      for (ListGraph::EdgeIt e(g); e!=INVALID; ++e) ecolor[e]=BLUE;
-
-      for (ListGraph::NodeIt v(g); v!=INVALID; ++v) {
-      lpvar[v] = x[v].get(GRB_DoubleAttr_X);
-      if (lpvar[v] > 1.0 - EPS){ soma += weight[v]; vcolor[v]=RED;}
-      }
-      cout << "vCover Tree Value = " << soma << endl;
-
-      //-----------------------------------------------------------------
-
-      ViewListGraph(g,vname,ename,px,py,vcolor,ecolor,
-      "vCover cost in graph with "+IntToString(T.nnodes)+
-      " nodes: "+DoubleToString(soma));
-    */
+    bool res = transmissoes(dt, 20);
+    if (res) {
+      cout << "Melhor resultado: " << dt.BestVal << endl;
+    } else {
+      cout << "Resultaso obtido: " << dt.BestVal << endl;
+    }
+    
   } catch (...) {cout << "Error during callback..." << endl; }
 }
+
 
