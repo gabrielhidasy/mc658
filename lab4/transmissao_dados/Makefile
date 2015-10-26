@@ -20,7 +20,7 @@ ifeq ($(shell uname), Darwin)
 else
 	PLATFORM = linux64
 	CC      = g++
-	CC_ARGS    = -m64 -O2 -Wall -std=c++11 -g -DKNOWN_SOL
+	CC_ARGS    = -m64 -O2 -Wall -std=c++11 -g
 	RELEASE := $(shell uname -r | cut -f 1 -d .)
 	CC_LIB   = -lm -lpthread
 	GUROBI_DIR = /opt/gurobi$(VERSION)/$(PLATFORM)/

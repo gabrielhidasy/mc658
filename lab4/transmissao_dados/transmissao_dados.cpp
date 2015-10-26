@@ -126,12 +126,12 @@ void extract_solution(Problem_Data &G,
       ns = npath[1][c];
     }
     G.BestSol[z].push_back(G.t[z]);
-    cout << G.g.id(G.BestSol[z][0]);
-    for (unsigned int i = 1; i < G.BestSol[z].size(); i++) {
-      cout << "-" << G.g.id(G.BestSol[z][i]);
-    }
+    // cout << G.g.id(G.BestSol[z][0]);
+    // for (unsigned int i = 1; i < G.BestSol[z].size(); i++) {
+    //   cout << "-" << G.g.id(G.BestSol[z][i]);
+    // }
       
-    cout << endl;
+    //cout << endl;
   }
 }
 
@@ -226,6 +226,7 @@ bool transmissoes(Problem_Data &G, long maxtime)
       cout << "Erro, sistema impossivel" << endl;
       exit(1);
     }
+    cout << "Time: " <<  model.get(GRB_DoubleAttr_Runtime) << endl; 
     extract_solution(G,g,b);
     if (model.get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
       return false;
@@ -277,7 +278,7 @@ int main(int argc, char *argv[])
   ReadListGraph3(filename, g, NNodes, NEdges, NPairs, nodename, posx, posy, latencia, capacidade, custo, s, t, Tmax, q);
   Problem_Data dt(g, nodename, posx, posy, s, t, Tmax, q, custo, capacidade, latencia);
   try {
-    bool res = transmissoes(dt, 20);
+    bool res = transmissoes(dt, 1000);
     if (res) {
       cout << "Melhor resultado: " << dt.BestVal << endl;
     } else {
