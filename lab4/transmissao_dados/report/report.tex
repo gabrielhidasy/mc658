@@ -73,12 +73,7 @@ próxima (exata até a terceira casa decimal) da ótima conhecida devido
 a erros de arredondamento.
 \paragraph{} O programa foi testado contra entradas com tamanho
 variando de 100 a 2000 nós e de 5 a 50 conexões para os testes com
-resposta ótima conhecida, e de 100 até 450 nós de 5 até 50 conexões
-(É interessante notar o caso com 45 conexões e 100 nós, que foi um
-caso onde o programa demorou MUITO mais do que o esperado para
-resolver o problema (470s), no gráfico substitui o mesmo por 12 para
-não achatar os demais)
-
+resposta ótima conhecida, e de 100 até 450 nós de 5 até 50 conexões.
 
 \section*{Resultados} Seguem abaixo as tabelas com os tempos coletados
 para cada execução do programa com entradas conhecidas:
@@ -116,5 +111,14 @@ n/p & 100 & 150 & 200 & 250 & 300 & 350 & 400 & 450 \\
 50 & 15.3100 & 15.2817 & 11.1226 & 8.21201 & 22.8836 & 6.72498 & 9.32185 & 15.5944\\
 \end{tabular}
 \end{center}
-\includegraphics[scale=0.4]{graphic_unknow}
+\paragraph{} É interessante notar o caso com 45 conexões e 100 nós, que foi um
+caso onde o programa demorou MUITO mais do que o esperado para
+resolver o problema (470s), no gráfico substitui o mesmo por 12 para
+não achatar os demais. Isso indica que o problema é muito dependente
+da entrada para obter uma solução em um tempo aceitavel. Mas é
+possivel notar uma tendencia de aumento do tempo de execução com o
+aumento do numero de nós e de pares
+\begin{center}
+  \includegraphics[scale=0.35]{graphic_unknow}
+  \end{center}
 \end{document}
